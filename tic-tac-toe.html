@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>井字遊戲</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #fdf6ec;
+      font-family: 'Segoe UI', sans-serif;
+      color: #5c3d2e;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #d35400;
+    }
+
+    .status {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      height: 2rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 120px);
+      grid-template-rows: repeat(3, 120px);
+      gap: 8px;
+      margin: 0 auto 30px;
+      width: fit-content;
+    }
+
+    .cell {
+      width: 120px;
+      height: 120px;
+      background: #fff8f0;
+      border: 2px solid #e0c8a8;
+      border-radius: 12px;
+      font-size: 3rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cell:hover {
+      background: #fce8d0;
+      transform: scale(1.05);
+    }
+
+    .cell.x {
+      color: #d35400;
+    }
+
+    .cell.o {
+      color: #c0392b;
+    }
+
+    .cell.win {
+      background: #f5d6b8;
+      animation: pulse 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      to { transform: scale(1.08); }
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+
+    .scoreboard .x-score { color: #d35400; }
+    .scoreboard .o-score { color: #c0392b; }
+    .scoreboard span { font-weight: bold; font-size: 1.5rem; }
+
+    .btn {
+      padding: 12px 32px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #d35400;
+      color: #fff;
+      font-weight: bold;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background: #b5441e;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>井字遊戲</h1>
+    <div class="scoreboard">
+      <div class="x-score">X 玩家：<span id="x-score">0</span></div>
+      <div>平手：<span id="draw-score">0</span></div>
+      <div class="o-score">O 玩家：<span id="o-score">0</span></div>
+    </div>
+    <div class="status" id="status">輪到 X 下棋</div>
+    <div class="board" id="board"></div>
+    <button class="btn" onclick="resetGame()">重新開始</button>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    let cells = Array(9).fill('');
+    let currentPlayer = 'X';
+    let gameOver = false;
+    let scores = { X: 0, O: 0, draw: 0 };
+
+    const winPatterns = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    function render() {
+      board.innerHTML = '';
+      cells.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        if (val) cell.classList.add(val.toLowerCase());
+        cell.textContent = val;
+        cell.addEventListener('click', () => handleClick(i));
+        board.appendChild(cell);
+      });
+    }
+
+    function handleClick(index) {
+      if (cells[index] || gameOver) return;
+      cells[index] = currentPlayer;
+      const winCombo = checkWin();
+      if (winCombo) {
+        gameOver = true;
+        scores[currentPlayer]++;
+        updateScoreboard();
+        statusEl.textContent = `🎉 ${currentPlayer} 獲勝！`;
+        render();
+        highlightWin(winCombo);
+        return;
+      }
+      if (cells.every(c => c)) {
+        gameOver = true;
+        scores.draw++;
+        updateScoreboard();
+        statusEl.textContent = '🤝 平手！';
+        render();
+        return;
+      }
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusEl.textContent = `輪到 ${currentPlayer} 下棋`;
+      render();
+    }
+
+    function checkWin() {
+      for (const pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
+          return pattern;
+        }
+      }
+      return null;
+    }
+
+    function highlightWin(combo) {
+      const cellEls = document.querySelectorAll('.cell');
+      combo.forEach(i => cellEls[i].classList.add('win'));
+    }
+
+    function updateScoreboard() {
+      document.getElementById('x-score').textContent = scores.X;
+      document.getElementById('o-score').textContent = scores.O;
+      document.getElementById('draw-score').textContent = scores.draw;
+    }
+
+    function resetGame() {
+      cells = Array(9).fill('');
+      currentPlayer = 'X';
+      gameOver = false;
+      statusEl.textContent = '輪到 X 下棋';
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>
